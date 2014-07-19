@@ -29,6 +29,8 @@ Ghostsheet = function(options){
         timeout: 30
     };
 
+    api.modes = ["load", "fetch", "cache", "update"];
+
     api.options = null;
 
     /**
@@ -69,6 +71,21 @@ Ghostsheet = function(options){
             default: break;
         }
         return this;
+    };
+
+    /**
+     * Get data by the mode
+     *
+     * @param {String} key
+     * @param {String} mode
+     * @returns {Lazy}
+     */
+    api.get = function(key, mode){
+        mode = mode || "load";
+        if(_.indexOf(this.modes, mode) < 0){
+            throw new Error("Invalid mode: " + mode);
+        }
+        return this[mode](key);
     };
 
     /**
