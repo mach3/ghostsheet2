@@ -10,6 +10,9 @@
 
 class Ghostsheet {
 
+	const ERROR_INVALID_MODE = "Invalid mode";
+	const ERROR_NOT_FOUND = "Not found";
+
 	/**
 	 * Options:
 	 * - {String} cache_suffix    ... Extension for cache file
@@ -133,6 +136,62 @@ class Ghostsheet {
 	}
 
 	/**
+	 * Ajax action
+	 * -----------
+	 * Interface for Ajax Request
+	 * vars:
+	 *   - {String} mode
+	 *   - {String} key
+	 *
+	 * @param {Array} $vars
+	 */
+	public function ajax($vars = null){
+		$vars = array_merge(array(
+			"mode" => "load",
+			"key" => null
+		), $vars ? $vars : $_GET);
+
+
+		try {
+
+			header("Content-Type: application/json; charset=utf-8");
+
+			if(! in_array($vars["mode"], $this->modes)){
+				throw new Exception(self::ERROR_INVALID_MODE);
+			}
+			$mode = $vars["mode"];
+			$data = $this->$mode($vars["key"]);
+			if(! $data){
+				throw new Exception(self::ERROR_NOT_FOUND);
+			}
+			echo json_encode(array(
+				"status" => "success",
+				"data" => $data
+			));
+
+		} catch(Exception $e){
+
+			$message = $e->getMessage();
+			switch($message){
+				case self::ERROR_INVALID_MODE:
+				case self::ERROR_NOT_FOUND:
+					break;
+				default: 
+					$message = "Unknown error";
+					break;
+			}
+			header("HTTP/1.1 500 Internal Server Error");
+			echo json_encode(array(
+				"status" => "error",
+				"message" => $message
+			));
+
+		}
+
+		return $this;
+	}
+
+	/**
 	 * Get or save cache
 	 *
 	 * @param {String} $key
@@ -176,9 +235,12 @@ class Ghostsheet {
 	 * @return {Array}
 	 */
 	private function _parse($key, $content){
+		if(! $content){
+			return null;
+		}
+
 		$dom = new DOMDocument();
 		$dom->loadHTMl($content);
-
 		$data = array(
 			"title" => null,
 			"key" => $key,
@@ -214,7 +276,9 @@ class Ghostsheet {
 				foreach($row->getElementsByTagName("td") as $col){
 					array_push($cols, $col->nodeValue);
 				}
-				if(! $cols){ continue; }
+				if(! $cols || ! implode("", $cols)){
+					continue;
+				}
 
 				// parse fields
 				if(! $sheet["fields"]){
@@ -247,6 +311,7 @@ class Ghostsheet {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_FAILONERROR, true);
 		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 		$res = curl_exec($ch);
 		curl_close($ch);

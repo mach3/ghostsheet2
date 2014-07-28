@@ -34,6 +34,14 @@ Example:
 Then publish the spreadhseet as web page.  
 Note your spreadsheet's key (like: 00X_xxxXX_0xXxxXx00XXXxx-xxXXxX0-XxXxXx0XxxX)
 
+Available types:
+
+- string (default)
+- integer, int
+- boolean, bool
+- float, double
+- json 
+
 ### Get Data
 
     require "the/path/to/ghostsheet/phplib/Ghostsheet.php";
@@ -80,6 +88,11 @@ Get data by specified mode (load|fetch|cache|update)
 
 - Forcely fetch data from remote and save it as cache
 - This ignores cache lifetime
+
+#### ajax($vars:Array = $_GET) :Ghostsheet
+
+- Interface for Ajax request
+- `$vars` accepts `mode` and `key`
 
 ### Options
 
