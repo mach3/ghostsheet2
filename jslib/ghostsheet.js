@@ -267,8 +267,8 @@ Ghostsheet = function(options){
                     cols.push($(this).text());
                 });
 
-                // No columns ? continue
-                if(! cols.length){
+                // No columns or empty cols ? continue
+                if(! cols.length || ! cols.join("")){
                     return;
                 }
 
