@@ -10,7 +10,7 @@ var _ = require("underscore"),
     path = require("path"),
     util = require("util"),
     fs = require("fs"),
-    scraper = require("scraper"),
+    client = require("cheerio-httpcli"),
     lazy = require("./lazy.js"),
     Ghostsheet;
 
@@ -132,12 +132,13 @@ Ghostsheet = function(options){
         my = this;
         url = util.format(this.config("url"), key);
 
-        scraper(url, function(e, $){
+        client.fetch(url, function(e, $, res){
             if(e){
                 return df.reject("Failed to fetch resource");
             }
             df.resolve(my._parse(key, $));
         });
+
         return df;
     };
 
@@ -276,6 +277,8 @@ Ghostsheet = function(options){
                 if(! sheet.fields){
                     sheet.fields = cols.map(function(value){
                         return value.split(":");
+                    }).filter(function(value){
+                        return ! (value.length === 1 && value[0] === "");
                     });
                     return;
                 }
@@ -318,6 +321,7 @@ Ghostsheet = function(options){
          * @returns {*}
          */
         juggle: function(value, type){
+            var res;
             type = type || "string";
             switch(type){
                 case "int":
@@ -329,6 +333,14 @@ Ghostsheet = function(options){
                 case "float":
                 case "double":
                     return new Number(value);
+                case "json":
+                    try {
+                        res = JSON.parse(value);
+                    } catch(e){
+                        console.error("JSON Parse Error: " + value);
+                        res = null;
+                    }
+                    return res;
                 default: break;
             }
             return value;
